@@ -1,0 +1,1 @@
+for i in mp3/*; do echo $i; bash -x run_silence_removal.sh $i; done

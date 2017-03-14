@@ -1,4 +1,10 @@
-To run an example, do `bash build_gentle.sh`
+The full run_alignment.sh needs 2 directories, "raw_txt" and "wav", where fname.wav and fname.txt are matched pairs of audio, text content
+
+It will run over all files, collecting word statistics and helping do some common cleanup. This was tested on a scraped dataset of political speeches, so it may not generalize to other data.
+
+`bash -x run_alignment.sh` is recommended to see intermediate activity.
+
+To run an example of just one alignment instead, do `bash build_gentle.sh`
 
 If build is successful, try the following commands (files are also stored here for convenience)
 

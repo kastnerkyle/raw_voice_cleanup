@@ -5,6 +5,10 @@ import numpy as np
 jsonpath = sys.argv[1]
 print(jsonpath)
 
+split_chunk = 20
+split_size = 10
+drop_chunk = 4
+
 with open(jsonpath, 'r') as f:
     d = json.load(f)
 
@@ -39,8 +43,6 @@ assert len(valid_start_bounds) == len(valid_stop_bounds)
 
 bounds = list(zip(valid_start_bounds, valid_stop_bounds))
 base_time_diff = [stop - start for start, stop in bounds]
-split_chunk = 20
-drop_chunk = 4
 
 # remove under X second chunks
 to_keep = [n for n, _ in enumerate(base_time_diff) if _ > drop_chunk]
@@ -150,6 +152,43 @@ to_split = [n for n, _ in enumerate(time_diff) if _ > split_chunk]
 all_bounds = [(n, b) for n, b in enumerate(bounds)]
 split_bounds = [(n, b) for n, b in enumerate(bounds) if n in to_split]
 
+def flatten(S):
+    if S == []:
+        return S
+    if isinstance(S[0], list):
+        return flatten(S[0]) + flatten(S[1:])
+    return S[:1] + flatten(S[1:])
+
+
+def recurse_bounds(tree):
+    try:
+        len(tree[0][0])
+        res_i = []
+        for i in range(len(tree)):
+            res_i.append(recurse_bounds(tree[i]))
+        # flatten it out
+        return flatten(res_i)
+    except KeyError:
+        # in a leaf
+        try:
+            s = None
+            for i in range(len(tree)):
+                if "start" in tree[i].keys():
+                    s = tree[i]['start']
+                    break
+            e = None
+            for ii in range(len(tree))[::-1]:
+                if "end" in tree[ii].keys():
+                    e = tree[ii]['end']
+                    break
+            if s is None or e is None:
+                raise KeyError()
+        except KeyError:
+            print("Key error in bounds recursion")
+            from IPython import embed; embed()
+            raise ValueError()
+        return s, e
+
 # find new bounds for split_bounds
 split_bound_indices = [i[0] for i in split_bounds]
 final_bounds = []
@@ -158,6 +197,13 @@ for nb, b in enumerate(bounds):
         final_bounds.append(b)
         continue
     w_in_b = [k[1] for k in kept if k[0] == nb]
-    r = recursive_split(w_in_b, 10)
+    r = recursive_split(w_in_b, split_size)
+    rb = recurse_bounds(r)
+    final_bounds.extend(rb)
+
+# format for dynamic_match
+final_bounds = [(i, fb) for i, fb in enumerate(final_bounds)]
+final_words = dynamic_match(final_bounds, all_words)
+# got the final words bounded - now what
 from IPython import embed; embed()
 raise ValueError()

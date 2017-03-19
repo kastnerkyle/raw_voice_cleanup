@@ -43,4 +43,8 @@ if [ ! -d "$segdir" ]; then
     done
 fi
 
-python wavseg.py spe_1960_0715_kennedy.json
+segwavdir=seg_wav
+segtxtdir=seg_txt
+for i in $segdir/*; do
+    python wavseg.py $i
+done

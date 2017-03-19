@@ -163,11 +163,6 @@ def flatten(S):
 def recurse_bounds(tree):
     try:
         len(tree[0][0])
-        res_i = []
-        for i in range(len(tree)):
-            res_i.append(recurse_bounds(tree[i]))
-        # flatten it out
-        return flatten(res_i)
     except KeyError:
         # in a leaf
         try:
@@ -187,23 +182,31 @@ def recurse_bounds(tree):
             print("Key error in bounds recursion")
             from IPython import embed; embed()
             raise ValueError()
-        return s, e
+        return [(s, e)]
+    res_i = []
+    for i in range(len(tree)):
+        res_i.extend(recurse_bounds(tree[i]))
+    # flatten it out
+    return flatten(res_i)
 
 # find new bounds for split_bounds
 split_bound_indices = [i[0] for i in split_bounds]
 final_bounds = []
 for nb, b in enumerate(bounds):
     if nb not in split_bound_indices:
-        final_bounds.append(b)
+        if len(b) == 2:
+            final_bounds.append(b)
         continue
     w_in_b = [k[1] for k in kept if k[0] == nb]
     r = recursive_split(w_in_b, split_size)
     rb = recurse_bounds(r)
     final_bounds.extend(rb)
 
-# format for dynamic_match
-final_bounds = [(i, fb) for i, fb in enumerate(final_bounds)]
 final_words = dynamic_match(final_bounds, all_words)
-# got the final words bounded - now what
-from IPython import embed; embed()
-raise ValueError()
+
+ids = range(len(final_bounds))
+ids = sorted(list(set(ids)))
+for ii in ids:
+    w = [w_i for id_i, w_i in final_words if id_i == ii]
+    from IPython import embed; embed()
+    raise ValueError()

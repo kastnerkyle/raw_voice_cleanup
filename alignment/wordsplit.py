@@ -138,8 +138,13 @@ for w in ws:
         digit_start = digit_inds[0]
         digit_end = digit_inds[-1] + 1
         try:
-	    digit = wl[digit_start:digit_end]
-	    word_digit = int_to_en(int(digit)) 
+            digit = wl[digit_start:digit_end]
+            if "to" in digit:
+                digit = digit.replace("to", " ")
+                d = digit.split(" ")
+                res.extend([int_to_en(int(d[0])), "to", int_to_en(int(d[1]))])
+                continue
+            word_digit = int_to_en(int(digit))
             pre = wl[:digit_start]
             post = wl[digit_end:]
             if len(pre) > 0:
@@ -149,8 +154,8 @@ for w in ws:
                 res.append(post)
         except KeyError:
             res.append(wl)
-        except TypeError:
-            import pdb; pdb.set_trace()
+        except:
+            continue
     else:
         res.append(wl)
 

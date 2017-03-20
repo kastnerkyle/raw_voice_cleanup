@@ -45,6 +45,8 @@ fi
 
 segwavdir=seg_wav
 segtxtdir=seg_txt
-for i in $segdir/*; do
-    python wavseg.py $i
-done
+if [ ! -d "$segwavdir" ]; then
+    for i in $segdir/*; do
+        python wavseg.py $i
+    done
+fi

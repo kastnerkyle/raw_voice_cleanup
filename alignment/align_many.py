@@ -34,7 +34,7 @@ def pe(cmd, shell=True, verbose=True):
         all_lines.append(line.strip())
     return all_lines
 
-
+#python align_many.py /Tmp/kastner/lj_speech/LJSpeech-1.0/wavs/ /Tmp/kastner/lj_speech/LJSpeech-1.0/txts/ /Tmp/kastner/lj_speech/LJSpeech-1.0/gentle_json
 parser = argparse.ArgumentParser()
 parser.add_argument('wavdir', nargs=1, default=None)
 parser.add_argument('txtdir', nargs=1, default=None)
@@ -75,12 +75,30 @@ while True:
 
 assert len(wv_match) == len(tx_match)
 for n, (wvf, txf) in enumerate(zip(wv_match, tx_match)):
-    print("Aligning {}/{}, {}:{}".format(n + 1, len(wv_match), wvf, txf))
-    cmd = "python gentle/align.py --disfluency {} {}".format(wvf, txf)
-    res = pe(cmd, verbose=False)
-    rj = json.loads("".join(res))
     base = txf.split(os.sep)[-1][:-4] # remove .txt, and preceding path
     ojf = args.outjsondir[0] + os.sep + base + ".json"
-    with open(ojf, 'w') as f:
-         json.dump(rj, f, sort_keys=False, indent=4,
-                   ensure_ascii=False)
+    err_count = 1000000000000
+    if os.path.exists(ojf):
+        with open(ojf, 'r') as f:
+            tj = json.load(f)
+        err_count = sum([w["case"] == "not-found-in-audio" for w in tj["words"]])
+        for w in tj["words"]:
+            if "phones" in w:
+                phones = [wp["phone"] for wp in w["phones"]]
+        # don't reprocess if it is already perfect...
+        # this also allows to rerun and catch edge cases where it (can) return a failure
+        if err_count == 0:
+            continue
+    print("Aligning {}/{}, {}:{}".format(n + 1, len(wv_match), wvf, txf))
+    cmd = "python gentle/align.py --disfluency {} {}".format(wvf, txf)
+    try:
+        res = pe(cmd, verbose=False)
+        rj = json.loads("".join(res))
+        err_count_new = sum([w["case"] == "not-found-in-audio" for w in rj["words"]])
+        if err_count_new < err_count:
+            print("Writing out {}".format(ojf))
+            with open(ojf, 'w') as f:
+                 json.dump(rj, f, sort_keys=False, indent=4,
+                           ensure_ascii=True)
+    except:
+        print("Unknown exception, continuing...")

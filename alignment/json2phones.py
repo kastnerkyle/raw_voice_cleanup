@@ -3,6 +3,11 @@ import os
 import json
 import argparse
 from scipy.io import wavfile
+import matplotlib
+matplotlib.use("Agg")
+import matplotlib.pyplot as plt
+import numpy as np
+import math
 
 #python json2phones.py /Tmp/kastner/lj_speech/LJSpeech-1.0/wavs/ /Tmp/kastner/lj_speech/LJSpeech-1.0/gentle_json outdir
 parser = argparse.ArgumentParser()
@@ -17,6 +22,7 @@ if not os.path.exists(args.outtxtdir[0]):
 
 wavfile_match = {wavf[:-4]: args.wavdir[0] + os.sep + wavf for wavf in os.listdir(args.wavdir[0])}
 
+timing_agg = []
 dd = {}
 for n, jsf in enumerate(jsonfile_list):
     err_count = 1000000000000
@@ -53,7 +59,8 @@ for n, jsf in enumerate(jsonfile_list):
     dur = len(info[1]) / float(info[0])
     sil_e = abs(round(dur - prev_end, 4))
     sils.append(sil_e)
-    sils = [abs(round(s, 4)) for s in sils]
+    siils = [abs(round(s, 4)) for s in sils]
+    timing_agg += [si for si in sils]
     phone_str = str(" ".join(["@" + "@".join(ri) for ri in res]))
     transcript = "# " + tj["transcript"].encode("ascii", "ignore")
     gaps = "## " + " ".join([str(s) for s in sils])
@@ -62,3 +69,16 @@ for n, jsf in enumerate(jsonfile_list):
     with open(opf, "w") as f:
         f.writelines([phone_str + "\n", transcript + "\n", gaps])
     print("Wrote output {}".format(opf))
+
+plt.hist(timing_agg, 100)
+plt.savefig("tmphist")
+
+data_sorted = np.sort(timing_agg)
+data_sorted = data_sorted[data_sorted > 0.001]
+nbins = 4
+step = int(math.ceil(len(data_sorted)//nbins+1))
+binned_data = []
+for i in range(0,len(data_sorted),step):
+    binned_data.append(data_sorted[i:i+step])
+print([np.median(bd) for bd in binned_data])
+from IPython import embed; embed(); raise ValueError()

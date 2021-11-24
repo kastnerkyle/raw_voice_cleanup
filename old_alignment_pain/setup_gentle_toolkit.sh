@@ -23,7 +23,7 @@ mkdir -p raw_json
 # a lot of the tools only work with python 2!
 #ln -s /home/ubuntu/anaconda2 /home/ubuntu/anaconda
 export PATH="$HOME/anaconda/bin:$PATH"
-bash -x build_gentle.sh
+sudo bash -x build_gentle.sh
 
 # a lot of copying of files for
 # OpenFST bitrot https://github.com/hfst/hfst/issues/358

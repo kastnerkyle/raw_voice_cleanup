@@ -1,23 +1,4 @@
-To build the toolkit, first run (read it first! so you see what is being installed)
+docker -p 8765:8765 -P lowerquality/gentle
+go to new terminal
 
-```sudo bash setup_gentle_toolkit.sh```
-
-This should build and install everything that is needed.
-
-If build is successful, try the following commands (files are also stored here for convenience)
-
-wget https://aacapps.com/lamp/sound/eric.mp3
-echo "Hi, I'm Eric, one of the available high quality text to speech voices. Select download now to install my voice." >> eric.txt
-python gentle/align.py eric.mp3 eric.txt > out.json
-
-The `align_many.py` script can do alignment of many files, it takes 3 arguments - the input wavs, the input txts, and the desired output dir. For example:
-
-```python align_many.py /Tmp/kastner/lj_speech/LJSpeech-1.0/wavs/ /Tmp/kastner/lj_speech/LJSpeech-1.0/txts/ /Tmp/kastner/lj_speech/LJSpeech-1.0/gentle_json```
-
-Extra info:
-
-The full run_alignment.sh script needs 2 directories, "raw_txt" and "wav", where fname.wav and fname.txt are matched pairs of audio, text content
-
-It will run over all files, collecting word statistics and helping do some common cleanup. This was tested on a scraped dataset of political speeches, so it may not generalize to other data.
-
-`bash -x run_alignment.sh` is recommended to see intermediate activity.
+curl -F "audio=@eric.mp3" -F "transcript=@eric.txt" "http://localhost:8765/transcriptions?async=false" > transcribed.json

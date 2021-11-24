@@ -13,7 +13,7 @@ git checkout tags/0.10.1
 git submodule init
 git submodule update
 cp ../install_kaldi.sh ext/install_kaldi.sh
-cd ext && bash install_kaldi.sh
+cd ext && sudo bash install_kaldi.sh
 cd ..
-bash install_models.sh
+sudo bash install_models.sh
 cd ext && make depend && make

@@ -1,4 +1,33 @@
-docker -p 8765:8765 -P lowerquality/gentle
+docker run -p 8765:8765 -P lowerquality/gentle
 go to new terminal
 
 curl -F "audio=@eric.mp3" -F "transcript=@eric.txt" "http://localhost:8765/transcriptions?async=false" > transcribed.json
+
+# this one is not good, use speechbrain?
+(optional) do ASR on the data, then we can merge the forced alignment against provided text, with ASR (which has no knowledge of the GT text) to try and clean up errors, abbreviations, etc.
+
+(docker pull quay.io/codait/max-speech-to-text-converter)
+docker run -it -p 5000:5000 quay.io/codait/max-speech-to-text-converter
+
+# for mp3, the thing wants wav in 16k
+ffmpeg -i 111.mp3 -acodec pcm_s16le -ac 1 -ar 16000 out.wav
+find ../mp3_symlinks/ -name *.mp3 -exec sh -c 'echo $(basename {} .mp3)' \;
+find ../mp3_symlinks/ -name *.mp3 -exec sh -c 'ffmpeg -i {} -acodec pcm_s16le -ac 1 -ar 16000 $(basename {} .mp3).wav' \;
+
+curl -F "audio=@samples/8456-210777-0068.wav" -X POST http://localhost:5000/model/predict
+
+python align_many.py --wav_file_dir=/usr/local/data/kkastner/ljspeech_cleaned/wavs/ --metadata_csv=/usr/local/data/kkastner/ljspeech_cleaned/metadata.csv --port=8765
+python check_alignment.py
+python align_many.py --txts_dir=proposed_prealignment_txts/ --wav_file_dir=/usr/local/data/kkastner/ljspeech_cleaned/wavs/ --port=8765
+python check_alignment.py --copy_out_failures --check_json=proposed_alignment_json/ --check_txts=proposed_prealignment_txts/
+python pronounciation_cleanup.py
+python check_alignment.py --copy_out_failures --no_write --check_json=pronunciation_alignment_json/ --check_txts=pronunciation_prealignment_txts/
+mkdir final_alignment_json
+cp -pr alignment_json final_alignment_json
+cp -pr proposed_alignment_json/* final_alignment_json
+cp -pr pronunciation_alignment_json/* final_alignment_json
+python check_alignment.py --no_write --check_json=final_alignment_json/ --check_txts=prealignment_txts/
+
+by the end, there should be 0 error files (the pronunciation_cleanup ensures this by filling in with pronunciation lookup if possible, then finally a rule based g2p if all else fails)
+
+cp -pr final_alignment_json/ /usr/local/data/kkastner/ljspeech_cleaned/alignment_json

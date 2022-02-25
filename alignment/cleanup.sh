@@ -1,0 +1,1 @@
+rm -r alignment_json/ failure_alignment_json/ failure_prealignment_txts/ final_alignment_json/ prealignment_txts/ pronunciation_alignment_json/ pronunciation_prealignment_txts/ proposed_alignment_json/ proposed_prealignment_txts/

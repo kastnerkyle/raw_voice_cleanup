@@ -17,12 +17,19 @@ find ../mp3_symlinks/ -name *.mp3 -exec sh -c 'ffmpeg -i {} -acodec pcm_s16le -a
 curl -F "audio=@samples/8456-210777-0068.wav" -X POST http://localhost:5000/model/predict
 
 python align_many.py --wav_file_dir=/usr/local/data/kkastner/ljspeech_cleaned/wavs/ --metadata_csv=/usr/local/data/kkastner/ljspeech_cleaned/metadata.csv --port=8765
+OR optionally
+# DID THIS ONE
+python align_many.py --prealignment_only --wav_file_dir=/usr/local/data/kkastner/ljspeech_cleaned/wavs/ --metadata_csv=/usr/local/data/kkastner/ljspeech_cleaned/metadata.csv --port=8765
+
 python check_alignment.py
+OR
+# DID THIS ONE
+python check_alignment.py --no_expand_abbreviation
+
 python align_many.py --txts_dir=proposed_prealignment_txts/ --wav_file_dir=/usr/local/data/kkastner/ljspeech_cleaned/wavs/ --port=8765
 python check_alignment.py --copy_out_failures --check_json=proposed_alignment_json/ --check_txts=proposed_prealignment_txts/
-python pronounciation_cleanup.py
+python pronunciation_cleanup.py
 python check_alignment.py --copy_out_failures --no_write --check_json=pronunciation_alignment_json/ --check_txts=pronunciation_prealignment_txts/
-mkdir final_alignment_json
 cp -pr alignment_json final_alignment_json
 cp -pr proposed_alignment_json/* final_alignment_json
 cp -pr pronunciation_alignment_json/* final_alignment_json

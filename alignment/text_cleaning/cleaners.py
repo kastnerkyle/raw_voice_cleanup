@@ -146,10 +146,15 @@ def english_cleaners(text):
   return text
 
 
-def english_minimal_cleaners(text):
+def english_no_expand_abbreviation_cleaners(text):
   '''Pipeline for English text, including number and abbreviation expansion.'''
+  orig_text = text
   text = convert_to_ascii(text)
+  text = space_acronyms(text)
   text = lowercase(text)
   text = expand_numbers(text)
+  text = collapse_spurious(text)
   text = collapse_whitespace(text)
+  if orig_text[-1] in [".", "!", "?"]:
+      text = text + orig_text[-1]
   return text

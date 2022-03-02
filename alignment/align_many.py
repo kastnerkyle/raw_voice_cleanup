@@ -65,10 +65,10 @@ if csv_path is not None:
             print(el)
         print("Found several possible corrupted wav files (wav filesize < 1k bytes)")
         print("Remove these entries from metadata.csv and the core dataset wav dir and try again")
-        print("Example to list these files programmatically:")
-        print("#for i in $(python align_many.py --wav_file_dir=/usr/local/data/kkastner/lessac_blizzard/wavs/ --metadata_csv=/usr/local/data/kkastner/lessac_blizzard/metadata.csv --port=8765 | grep -v grep | grep segments); do ls -lh /usr/local/data/kkastner/lessac_blizzard/wavs/$i.wav; done")
         print("Example to remove these lines from metadata csv")
         print("#python align_many.py --wav_file_dir=/usr/local/data/kkastner/lessac_blizzard/wavs/ --metadata_csv=/usr/local/data/kkastner/lessac_blizzard/metadata.csv --port=8765 | grep -v grep | grep segments > exclude.txt; grep -v -f exclude.txt /usr/local/data/kkastner/lessac_blizzard/metadata.csv > filtered_metadata.csv")
+        print("Example to list these files programmatically:")
+        print("#for i in $(python align_many.py --wav_file_dir=/usr/local/data/kkastner/lessac_blizzard/wavs/ --metadata_csv=/usr/local/data/kkastner/lessac_blizzard/metadata.csv --port=8765 | grep -v grep | grep segments); do ls -lh /usr/local/data/kkastner/lessac_blizzard/wavs/$i.wav; done")
         sys.exit()
 
     did_first_print = False
@@ -117,25 +117,26 @@ else:
     for b_k in base_keys:
         # check if the actual wav file seems corrupted
         exact_wav = wav_file_dir + os.sep + b_k + ".wav"
-        # see 166 bytes for failures many times
-        if os.path.getsize(exact_wav) < 1000:
+        if os.path.exists(exact_wav):
+            # see 166 bytes for failures many times
+            if os.path.getsize(exact_wav) < 1000:
+                possible_corrupted_wav.append(b_k)
+        else:
             possible_corrupted_wav.append(b_k)
 
     if len(possible_corrupted_wav) > 0:
         for el in possible_corrupted_wav:
             print(el)
         print("Found several possible corrupted wav files (wav filesize < 1k bytes)")
-        print("Remove these entries from metadata.csv and the core dataset wav dir and try again")
+        print("Remove these entries from prealignment_txts and the core dataset wav dir and try again")
         print("Example to list these files programmatically:")
-        print("#for i in $(python align_many.py --wav_file_dir=/usr/local/data/kkastner/lessac_blizzard/wavs/ --metadata_csv=/usr/local/data/kkastner/lessac_blizzard/metadata.csv --port=8765 | grep -v grep | grep segments); do ls -lh /usr/local/data/kkastner/lessac_blizzard/wavs/$i.wav; done")
-        print("Example to remove these lines from metadata csv")
-        print("#python align_many.py --wav_file_dir=/usr/local/data/kkastner/lessac_blizzard/wavs/ --metadata_csv=/usr/local/data/kkastner/lessac_blizzard/metadata.csv --port=8765 | grep -v grep | grep segments > exclude.txt; grep -v -f exclude.txt /usr/local/data/kkastner/lessac_blizzard/metadata.csv > filtered_metadata.csv")
+        print("#for i in $(python align_many.py --txts_dir=proposed_prealignment_txts/ --wav_file_dir=/usr/local/data/kkastner/lessac_blizzard/wavs --port=8765 | grep -v grep | grep segments); do ls -lh proposed_prealignment_txts/$i.txt; ls -lh /usr/local/data/kkastner/lessac_blizzard/wavs/$i.wav; done")
         sys.exit()
 
     did_first_print = False
     keys_to_run = []
     for b_k in base_keys:
-        json_path = "alignment_json" + os.sep + b_k + ".json"
+        json_path = out_json_folder + os.sep + b_k + ".json"
         if os.path.exists(json_path):
             if not did_first_print:
                 print("found existing files, trying to continue from last correct file output")

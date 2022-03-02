@@ -31,10 +31,18 @@ python check_alignment.py --copy_out_failures --check_json=proposed_alignment_js
 python pronunciation_cleanup.py
 python check_alignment.py --copy_out_failures --no_write --check_json=pronunciation_alignment_json/ --check_txts=pronunciation_prealignment_txts/
 cp -pr alignment_json final_alignment_json
-cp -pr proposed_alignment_json/* final_alignment_json
-cp -pr pronunciation_alignment_json/* final_alignment_json
+for i in proposed_alignment_json/*; do cp $i final_alignment_json/$(basename $i); done
+for i in pronunciation_alignment_json/*; do cp $i final_alignment_json/$(basename $i); done
 python check_alignment.py --no_write --check_json=final_alignment_json/ --check_txts=prealignment_txts/
 
 by the end, there should be 0 error files (the pronunciation_cleanup ensures this by filling in with pronunciation lookup if possible, then finally a rule based g2p if all else fails)
+
+if there are still errors, you can dump the base names for failures to failures.txt with 
+python check_alignment.py --dump_failures --no_write --check_json=final_alignment_json/ --check_txts=prealignment_txts/
+
+for cleaning a metadata.csv file something to remove the failures is grep -v -f failures.txt metadata.csv > pruned_metadata.csv
+for deleting offending files, try a bash for loop like for i in $(cat failures.txt); do echo $i.json; done
+
+
 
 cp -pr final_alignment_json/ /usr/local/data/kkastner/ljspeech_cleaned/alignment_json

@@ -36,9 +36,14 @@ if not os.path.exists(pronunciation_out_json_folder):
     os.mkdir(pronunciation_out_json_folder)
 
 checks = ["noise", "sil", "oov", "#", "laughter", "<eps>"]
+complete_failures = []
 for prealignment_txt, alignment_json in list(zip(prealignment_txt_paths, alignment_json_paths)):
     with open(alignment_json, "r") as f:
-        alignment = json.load(f)
+        try:
+            alignment = json.load(f)
+        except:
+            complete_failures.append(alignment_json)
+            continue
 
     new_alignment_words = []
     for n, el in enumerate(alignment["words"]):
@@ -98,3 +103,8 @@ for prealignment_txt, alignment_json in list(zip(prealignment_txt_paths, alignme
         json.dump(out_alignment, f)
 
     shutil.copy2(prealignment_txt, pronunciation_out_txts_folder + os.sep + os.path.basename(prealignment_txt))
+
+if len(complete_failures) > 0:
+    print("failz")
+    from IPython import embed; embed(); raise ValueError()
+

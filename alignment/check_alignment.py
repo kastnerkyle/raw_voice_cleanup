@@ -12,6 +12,8 @@ parser.add_argument('--copy_out_failures', default=False, action="store_true",
                     help='copy out to proposed folder\n')
 parser.add_argument('--no_write', default=False, action="store_true",
                     help='dont write anything out\n')
+parser.add_argument('--dump_failures', default=False, action="store_true",
+                    help='dump list of failure file basenames to "failures.txt"\n')
 parser.add_argument('--check_json', type=str, default="alignment_json",
                     help='folder of json to check\n')
 parser.add_argument('--check_txts', type=str, default="prealignment_txts",
@@ -23,6 +25,7 @@ alignment_folder = args.check_json
 copy_out_failures = args.copy_out_failures
 no_write = args.no_write
 no_expand_abbreviation = args.no_expand_abbreviation
+dump_failures = args.dump_failures
 
 names = [os.path.splitext(f)[0] for f in sorted(os.listdir(alignment_folder))]
 alignment_json_paths = [alignment_folder + os.path.sep + n + ".json" for n in names]
@@ -46,7 +49,13 @@ failed_to_align = []
 elements_of_failure = []
 for prealignment_txt, alignment_json in list(zip(prealignment_txt_paths, alignment_json_paths)):
     with open(alignment_json, "r") as f:
-        alignment = json.load(f)
+        try:
+            alignment = json.load(f)
+        except:
+            failed_to_align.append((prealignment_txt, alignment_json))
+            elements_of_failure.append(("", None))
+            continue
+
     for el in alignment["words"]:
         if el["case"] != "success":
             if len(failed_to_align) > 0:
@@ -62,7 +71,12 @@ phones_of_failure = []
 checks = ["noise", "sil", "oov", "#", "laughter", "<eps>"]
 for prealignment_txt, alignment_json in list(zip(prealignment_txt_paths, alignment_json_paths)):
     with open(alignment_json, "r") as f:
-        alignment = json.load(f)
+        try:
+            alignment = json.load(f)
+        except:
+            failed_to_check.append((prealignment_txt, alignment_json))
+            phones_of_failure.append(("", None))
+            continue
 
     # set a flag if there's a failed alignment, won't have phones!
     skip_to_next = False
@@ -94,6 +108,24 @@ out_folder = "proposed_prealignment_txts"
 assert out_folder != prealignment_folder
 assert out_folder != alignment_folder
 
+if dump_failures:
+    failure_lines = []
+    if len(failed_to_check) > 0 or len(failed_to_align) > 0:
+        print("Some examples failed due to detection of unmatched text or invalid phone symbols in {}".format(checks))
+        print("{} files failed alignment check".format(len(failed_to_align)))
+        print("{} files failed phone check".format(len(failed_to_check)))
+        print("Dumping failures to failures.txt")
+        for prealignment_txt, alignment_json in failed_to_check + failed_to_align:
+            base1 = os.path.basename(prealignment_txt)
+            final_base1 = os.path.splitext(base1)[0]
+            base2 = os.path.basename(alignment_json)
+            final_base2 = os.path.splitext(base2)[0]
+            assert final_base1 == final_base2
+            failure_lines.append(final_base1)
+
+    with open("failures.txt", "w") as f:
+         f.writelines([l + "\n" for l in failure_lines])
+
 if not os.path.exists(out_folder):
     os.mkdir(out_folder)
 
@@ -115,9 +147,8 @@ if copy_out_failures:
     for prealignment_txt, alignment_json in failed_to_check + failed_to_align:
         shutil.copy2(prealignment_txt, out_txts_folder + os.sep + os.path.basename(prealignment_txt))
         shutil.copy2(alignment_json, out_json_folder + os.sep + os.path.basename(alignment_json))
-    sys.exit()
 
-if no_write:
+if copy_out_failures or dump_failures or no_write:
     sys.exit()
 
 if len(failed_to_check) > 0 or len(failed_to_align) > 0:
@@ -130,9 +161,13 @@ if len(failed_to_check) > 0 or len(failed_to_align) > 0:
         with open(prealignment_txt, "r") as f:
              lines = f.readlines()
         line = lines[0]
-        if no_expand_abbreviation:
-            clean_line = clean_text(line, ["english_no_expand_abbreviation_cleaners"])
-        else:
-            clean_line = clean_text(line, ["english_cleaners"])
+        try:
+            if no_expand_abbreviation:
+                clean_line = clean_text(line, ["english_no_expand_abbreviation_cleaners"])
+            else:
+                clean_line = clean_text(line, ["english_cleaners"])
+        except:
+            print("Exception in cleaners")
+            from IPython import embed; embed(); raise ValueError()
         with open(out_folder + os.sep + base, "w") as f:
             f.write(clean_line + "\n")
